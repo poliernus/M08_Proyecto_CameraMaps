@@ -1,7 +1,9 @@
 package com.dam.projectem08_uf2_yayserziyadi_polmelara;
 
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -13,6 +15,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.dam.projectem08_uf2_yayserziyadi_polmelara.databinding.ActivityMapsBinding;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+    int PERMISSION_ID = 44;
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -30,20 +33,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @Override
+
+   private void requestPermissions() {
+       ActivityCompat.requestPermissions(this, new String[]{
+               Manifest.permission.ACCESS_COARSE_LOCATION,
+               Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_ID);
+   }
+
+
+    private boolean checkPermissions() {
+       return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+   }
+
+     // OnMapReady se puede utilizar para poner los marcadores con las fotos
+
+       @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Add a marker in Sydney and move the camera
         LatLng sydney = new LatLng(-34, 151);
         mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
