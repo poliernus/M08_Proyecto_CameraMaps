@@ -1,4 +1,4 @@
-package com.example.pokeapifinal;
+package com.dam.projectem08_uf2_yayserziyadi_polmelara;
 
 import static android.content.ContentValues.TAG;
 
