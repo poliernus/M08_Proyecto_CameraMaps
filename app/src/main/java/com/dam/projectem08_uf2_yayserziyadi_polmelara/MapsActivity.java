@@ -16,7 +16,6 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.widget.Toast;
 
 
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Locale;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
-    int PERMISSION_ID = 44;
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
@@ -73,6 +71,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     latitude = addresses.get(0).getLatitude();
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
+                                    Toast.makeText(MapsActivity.this, String.valueOf(longitude), Toast.LENGTH_LONG).show();
                                     mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
                                     float zoomLevel = 11.0f; //This goes up to 21
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
