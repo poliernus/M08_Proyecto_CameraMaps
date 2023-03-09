@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "287727295889",
+    "project_id": "m08cameramapsfbyzpm",
+    "storage_bucket": "m08cameramapsfbyzpm.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287727295889:android:64ed6b93e0fb30c2620e30",
+        "android_client_info": {
+          "package_name": "com.dam.projectem08_uf2_yayserziyadi_polmelara"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287727295889-jhp2nqlobb5oq74r4g98un2ikqhprek5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCchcV8pjJv4iNdYYQY8TZVzkVBDw46llc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287727295889-jhp2nqlobb5oq74r4g98un2ikqhprek5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
