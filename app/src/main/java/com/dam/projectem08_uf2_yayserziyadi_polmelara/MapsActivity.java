@@ -10,12 +10,15 @@ import android.Manifest;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+import android.content.Intent;
 import android.content.pm.PackageManager;
 
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 
@@ -26,6 +29,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.dam.projectem08_uf2_yayserziyadi_polmelara.databinding.ActivityMapsBinding;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.IOException;
 import java.util.List;
@@ -41,6 +45,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public double latitude;
     public double longitude;
 
+    private FloatingActionButton btnCapture;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,6 +60,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        btnCapture = (FloatingActionButton)findViewById(R.id.btnCapture);
+        btnCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openActivityCamera();
+            }
+        });
 
     }
 
@@ -71,7 +85,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     latitude = addresses.get(0).getLatitude();
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
-                                    Toast.makeText(MapsActivity.this, String.valueOf(longitude), Toast.LENGTH_LONG).show();
                                     mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
                                     float zoomLevel = 11.0f; //This goes up to 21
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
@@ -94,8 +107,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         ActivityCompat.requestPermissions(MapsActivity.this, new String[]
                 {Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
     }
+    public void openActivityCamera() {
+        Intent intent = new Intent(this, Camera.class);
+        startActivity(intent);
+    }
 
-    @Override
+        @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

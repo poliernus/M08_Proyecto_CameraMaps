@@ -29,6 +29,8 @@
         <activity android:name=".activityRegister">
 
         </activity>
+        <activity android:name=".Camera">
+        </activity>
         <activity android:name=".activityLogin">
 
         </activity>
