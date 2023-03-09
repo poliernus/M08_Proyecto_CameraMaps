@@ -86,7 +86,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
                                     mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
-                                    float zoomLevel = 11.0f; //This goes up to 21
+                                    float zoomLevel = 11.0f;
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
 
                                 } catch (IOException e) {
