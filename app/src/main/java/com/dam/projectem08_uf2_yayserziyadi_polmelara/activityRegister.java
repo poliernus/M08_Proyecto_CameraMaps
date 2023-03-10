@@ -120,7 +120,7 @@ public class activityRegister extends AppCompatActivity {
                 break;
             case 5:
                 imageView.setColorFilter(activityRegister.this.getResources().getColor(R.color.teal_700));
-                Toast.makeText(this, "Toast",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Secret Toast",Toast.LENGTH_SHORT).show();
                 break;
         }
         numColor++;
