@@ -30,6 +30,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.dam.projectem08_uf2_yayserziyadi_polmelara.databinding.ActivityMapsBinding;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,6 +41,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
+
+    FirebaseAuth mAuth;
+
+    FirebaseUser user;
 
     FusedLocationProviderClient fusedLocationProviderClient;
     private final static int REQUEST_CODE = 100;
@@ -51,12 +57,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         getLastLocation();
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -67,7 +71,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 openActivityCamera();
             }
         });
-
     }
 
     private void getLastLocation() {
@@ -86,14 +89,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
                                     mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
-                                    float zoomLevel = 11.0f; //This goes up to 21
+                                    float zoomLevel = 11.0f;
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
-
-
                             }
 
                         }
@@ -109,6 +110,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
     public void openActivityCamera() {
         Intent intent = new Intent(this, Camera.class);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude);
         startActivity(intent);
     }
 
@@ -123,9 +126,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Toast.makeText(this, "Required Permission", Toast.LENGTH_SHORT).show();
             }
         }
-
     }
-        // OnMapReady se puede utilizar para poner los marcadores con las fotos
 
         @Override
         public void onMapReady (GoogleMap googleMap){

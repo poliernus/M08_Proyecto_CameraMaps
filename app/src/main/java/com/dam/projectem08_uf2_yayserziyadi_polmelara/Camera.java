@@ -34,7 +34,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,13 +50,21 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class Camera extends AppCompatActivity {
 
     private FloatingActionButton btnCapture;
     private TextureView textureView;
+
+    FirebaseFirestore firebaseFirestore;
+
+    FirebaseAuth mAuth;
+
+    FirebaseUser user;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static{
@@ -65,7 +79,6 @@ public class Camera extends AppCompatActivity {
     private CameraCaptureSession cameraCaptureSessions;
     private CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
-
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
@@ -95,6 +108,16 @@ public class Camera extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+        double longituted = getIntent().getExtras().getDouble("longitude");
+        double latitude = getIntent().getExtras().getDouble("latitude");
+
+        String latitudeS = String.valueOf(latitude);
+        String longitutedS = String.valueOf(longituted);
+        mAuth = FirebaseAuth.getInstance();
+        user = mAuth.getCurrentUser();
+        Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
+        Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
+        Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
 
         textureView = (TextureView)findViewById(R.id.textureView);
         assert textureView != null;
@@ -104,11 +127,12 @@ public class Camera extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 takePicture();
+                postPhotoUser(latitudeS,longitutedS,user.getUid());
             }
         });
     }
     public void showImage(File file){
-        System.out.println("TEST: ------------------------"+ file.getAbsolutePath());
+        System.out.println("TEST: ------------------------" + file.getAbsolutePath());
         if (file.exists()){
             Bitmap imgBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
 
@@ -164,8 +188,6 @@ public class Camera extends AppCompatActivity {
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
-
-
                     }
                     catch (FileNotFoundException e)
                     {
@@ -182,6 +204,7 @@ public class Camera extends AppCompatActivity {
                         }
                     }
                 }
+
                 private void save(byte[] bytes) throws IOException {
                     OutputStream outputStream = null;
                     try{
@@ -200,7 +223,7 @@ public class Camera extends AppCompatActivity {
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(Camera.this, "Guardado en  "+file, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Camera.this, "Guardado en  "+ file, Toast.LENGTH_SHORT).show();
                     createCameraPreview();
                     showImage(file.getAbsoluteFile());
                 }
@@ -215,14 +238,10 @@ public class Camera extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-
                 }
             },mBackgroundHandler);
-
-
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -299,7 +318,6 @@ public class Camera extends AppCompatActivity {
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int i, int i1) {
-
         }
 
         @Override
@@ -356,4 +374,29 @@ public class Camera extends AppCompatActivity {
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
     }
+
+
+    private void postPhotoUser(String latitud, String longitud, String uid){
+        firebaseFirestore = FirebaseFirestore.getInstance();
+        Map<String, Object> map = new HashMap<>();
+        map.put("latitud",latitud);
+        map.put("longitud",longitud);
+        map.put("uid",uid);
+
+        firebaseFirestore.collection("userPhoto").add(map).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+            @Override
+            public void onSuccess(DocumentReference documentReference) {
+                Toast.makeText(getApplicationContext(),"Subida exitosa", Toast.LENGTH_SHORT).show();
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(getApplicationContext(),"Mal", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+    }
+
+
+
 }
