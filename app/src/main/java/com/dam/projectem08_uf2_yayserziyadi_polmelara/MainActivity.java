@@ -13,7 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
-    Button btnLogin,btnRegister;
+    Button btnLogin,btnMaps;
     int numColor = 1;
     ImageView imageView;
     private double mCurrAngle = 0;
@@ -23,8 +23,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         btnLogin = findViewById(R.id.buttonLogin);
-        btnRegister = findViewById(R.id.buttonRegister);
         imageView = findViewById(R.id.imageView);
+        btnMaps = findViewById(R.id.buttonMaps);
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -32,10 +32,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
-        btnRegister.setOnClickListener(new View.OnClickListener() {
+        btnMaps.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openActivityRegister();
+                openActivityMaps();
             }
         });
 
@@ -48,33 +48,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         startActivity(intent);
     }
 
-    public void openActivityRegister(){
-        Intent intent = new Intent(this, activityRegister.class);
+    public void openActivityMaps(){
+        Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
-    }
-    private void colorChange(){
-        if (numColor ==6){
-            numColor = 1;
-        }
-        switch (numColor){
-            case 1:
-                imageView.setColorFilter(MainActivity.this.getResources().getColor(R.color.purple_200));
-                break;
-            case 2:
-                imageView.setColorFilter(MainActivity.this.getResources().getColor(R.color.purple_500));
-                break;
-            case 3:
-                imageView.setColorFilter(MainActivity.this.getResources().getColor(R.color.purple_700));
-                break;
-            case 4:
-                imageView.setColorFilter(MainActivity.this.getResources().getColor(R.color.teal_200));
-                break;
-            case 5:
-                imageView.setColorFilter(MainActivity.this.getResources().getColor(R.color.teal_700));
-                Toast.makeText(this, "Toast",Toast.LENGTH_SHORT).show();
-                break;
-        }
-        numColor++;
     }
 
     @Override
