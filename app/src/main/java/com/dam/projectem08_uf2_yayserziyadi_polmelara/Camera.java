@@ -70,9 +70,7 @@ public class Camera extends AppCompatActivity {
 
     StorageReference storageReference;
 
-    String storage_path = "images/*";
-
-    private Uri image_url;
+    String storage_path = "images/";
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static{
@@ -388,8 +386,8 @@ public class Camera extends AppCompatActivity {
     private void postPhotoUser(String latitud, String longitud, String uid){
         String rute_storage_photo = storage_path + uid;
         StorageReference reference = storageReference.child(rute_storage_photo);
-        image_url = Uri.fromFile(file);
-        reference.putFile(image_url).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+        Uri thumbnailFile = Uri.fromFile(file);
+        reference.putFile(thumbnailFile).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
