@@ -18,6 +18,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -36,11 +37,15 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -59,12 +64,15 @@ public class Camera extends AppCompatActivity {
 
     private FloatingActionButton btnCapture;
     private TextureView textureView;
-
     FirebaseFirestore firebaseFirestore;
-
     FirebaseAuth mAuth;
-
     FirebaseUser user;
+
+    StorageReference storageReference;
+
+    String storage_path = "images/*";
+
+    private Uri image_url;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static{
@@ -108,17 +116,15 @@ public class Camera extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        double longituted = getIntent().getExtras().getDouble("longitude");
-        double latitude = getIntent().getExtras().getDouble("latitude");
-
-        String latitudeS = String.valueOf(latitude);
-        String longitutedS = String.valueOf(longituted);
+        storageReference = FirebaseStorage.getInstance().getReference();
+        String latitudeS = String.valueOf(getIntent().getExtras().getDouble("latitude"));
+        String longitutedS = String.valueOf(getIntent().getExtras().getDouble("longitude"));
         mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser();
+
         Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
         Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
         Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
-
         textureView = (TextureView)findViewById(R.id.textureView);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
@@ -376,27 +382,41 @@ public class Camera extends AppCompatActivity {
     }
 
 
-    private void postPhotoUser(String latitud, String longitud, String uid){
-        firebaseFirestore = FirebaseFirestore.getInstance();
-        Map<String, Object> map = new HashMap<>();
-        map.put("latitud",latitud);
-        map.put("longitud",longitud);
-        map.put("uid",uid);
 
-        firebaseFirestore.collection("userPhoto").add(map).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+
+
+    private void postPhotoUser(String latitud, String longitud, String uid){
+        String rute_storage_photo = storage_path + uid;
+        StorageReference reference = storageReference.child(rute_storage_photo);
+        image_url = Uri.fromFile(file);
+        reference.putFile(image_url).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
-            public void onSuccess(DocumentReference documentReference) {
-                Toast.makeText(getApplicationContext(),"Subida exitosa", Toast.LENGTH_SHORT).show();
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Toast.makeText(getApplicationContext(),"Mal", Toast.LENGTH_SHORT).show();
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                uriTask.addOnSuccessListener(new OnSuccessListener<Uri>() {
+                    @Override
+                    public void onSuccess(Uri uri) {
+                        firebaseFirestore = FirebaseFirestore.getInstance();
+                        Map<String, Object> map = new HashMap<>();
+                        String download_uri = uri.toString();
+                        map.put("latitud",latitud);
+                        map.put("longitud",longitud);
+                        map.put("uid",uid);
+                        map.put("uri",download_uri);
+                        firebaseFirestore.collection("userPhoto").add(map).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                            @Override
+                            public void onSuccess(DocumentReference documentReference) {
+                                Toast.makeText(getApplicationContext(),"Subida exitosa", Toast.LENGTH_SHORT).show();
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(getApplicationContext(),"Mal", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
             }
         });
-
     }
-
-
-
 }
