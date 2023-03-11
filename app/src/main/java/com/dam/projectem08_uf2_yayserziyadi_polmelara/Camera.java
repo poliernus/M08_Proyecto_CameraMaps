@@ -16,8 +16,10 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -28,13 +30,14 @@ import android.util.SparseIntArray;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -44,6 +47,7 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -73,11 +77,12 @@ public class Camera extends AppCompatActivity {
     String storage_path = "images/";
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    static{
-        ORIENTATIONS.append(Surface.ROTATION_0,90);
-        ORIENTATIONS.append(Surface.ROTATION_90,0);
-        ORIENTATIONS.append(Surface.ROTATION_180,270);
-        ORIENTATIONS.append(Surface.ROTATION_270,180);
+
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
     private String cameraId;
@@ -85,6 +90,7 @@ public class Camera extends AppCompatActivity {
     private CameraCaptureSession cameraCaptureSessions;
     private CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
+    private FusedLocationProviderClient fus;
     private File file;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
@@ -105,7 +111,7 @@ public class Camera extends AppCompatActivity {
         @Override
         public void onError(@NonNull CameraDevice cameraDevice, int i) {
             cameraDevice.close();
-            cameraDevice=null;
+            cameraDevice = null;
         }
     };
 
@@ -119,49 +125,49 @@ public class Camera extends AppCompatActivity {
         String longitutedS = String.valueOf(getIntent().getExtras().getDouble("longitude"));
         mAuth = FirebaseAuth.getInstance();
         user = mAuth.getCurrentUser();
+        fus = LocationServices.getFusedLocationProviderClient(this);
 
         Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
         Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
         Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
-        textureView = (TextureView)findViewById(R.id.textureView);
+        textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
-        btnCapture = (FloatingActionButton)findViewById(R.id.btnCapture);
+        btnCapture = (FloatingActionButton) findViewById(R.id.btnCapture);
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 takePicture();
-                postPhotoUser(latitudeS,longitutedS,user.getUid());
             }
         });
     }
-    public void showImage(File file){
+
+    public void showImage(File file) {
         System.out.println("TEST: ------------------------" + file.getAbsolutePath());
-        if (file.exists()){
+        if (file.exists()) {
             Bitmap imgBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
 
         }
     }
 
     private void takePicture() {
-        if(cameraDevice == null)
+        if (cameraDevice == null)
             return;
-        CameraManager manager = (CameraManager)getSystemService(Context.CAMERA_SERVICE);
-        try{
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
             Size[] jpegSizes = null;
-            if(characteristics != null)
+            if (characteristics != null)
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                         .getOutputSizes(ImageFormat.JPEG);
 
             int width = 640;
             int height = 480;
-            if(jpegSizes != null && jpegSizes.length > 0)
-            {
+            if (jpegSizes != null && jpegSizes.length > 0) {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
-            final ImageReader reader = ImageReader.newInstance(width,height,ImageFormat.JPEG,1);
+            final ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
             List<Surface> outputSurface = new ArrayList<>(2);
             outputSurface.add(reader.getSurface());
             outputSurface.add(new Surface(textureView.getSurfaceTexture()));
@@ -171,39 +177,33 @@ public class Camera extends AppCompatActivity {
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION,ORIENTATIONS.get(rotation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
-            file = new File(Environment.getExternalStorageDirectory()+"/"+UUID.randomUUID().toString()+".jpg");
-
+            file = new File(Environment.getExternalStorageDirectory() + "/" + UUID.randomUUID().toString() + ".jpg");
 
 
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader imageReader) {
-                    for (File i: (new File(file.getParent()).listFiles())
-                         ) {
-                        System.out.println("PATH: "+i.getAbsolutePath());
+                    for (File i : (new File(file.getParent()).listFiles())
+                    ) {
+                        System.out.println("PATH: " + i.getAbsolutePath());
                     }
 
                     Image image = null;
-                    try{
+                    try {
                         image = reader.acquireLatestImage();
                         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
-                    }
-                    catch (FileNotFoundException e)
-                    {
+                    } catch (FileNotFoundException e) {
                         e.printStackTrace();
-                    }
-                    catch (IOException e)
-                    {
+                    } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                    finally {
+                    } finally {
                         {
-                            if(image != null)
+                            if (image != null)
                                 image.close();
                         }
                     }
@@ -211,23 +211,24 @@ public class Camera extends AppCompatActivity {
 
                 private void save(byte[] bytes) throws IOException {
                     OutputStream outputStream = null;
-                    try{
+                    try {
                         outputStream = new FileOutputStream(file);
                         outputStream.write(bytes);
                         showImage(file);
-                    }finally {
-                        if(outputStream != null)
+                        postPhotoUser(file.getName());
+                    } finally {
+                        if (outputStream != null)
                             outputStream.close();
                     }
                 }
             };
 
-            reader.setOnImageAvailableListener(readerListener,mBackgroundHandler);
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(Camera.this, "Guardado en  "+ file, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(Camera.this, "Guardado en  " + file, Toast.LENGTH_SHORT).show();
                     createCameraPreview();
                     showImage(file.getAbsoluteFile());
                 }
@@ -236,33 +237,34 @@ public class Camera extends AppCompatActivity {
             cameraDevice.createCaptureSession(outputSurface, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    try{
-                        cameraCaptureSession.capture(captureBuilder.build(),captureListener,mBackgroundHandler);
+                    try {
+                        cameraCaptureSession.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
                 }
+
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                 }
-            },mBackgroundHandler);
+            }, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
     private void createCameraPreview() {
-        try{
+        try {
             SurfaceTexture texture = textureView.getSurfaceTexture();
-            assert  texture != null;
-            texture.setDefaultBufferSize(imageDimension.getWidth(),imageDimension.getHeight());
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
             cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                    if(cameraDevice == null)
+                    if (cameraDevice == null)
                         return;
                     cameraCaptureSessions = cameraCaptureSession;
                     updatePreview();
@@ -272,18 +274,18 @@ public class Camera extends AppCompatActivity {
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
                     Toast.makeText(Camera.this, "Changed", Toast.LENGTH_SHORT).show();
                 }
-            },null);
+            }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
     private void updatePreview() {
-        if(cameraDevice == null)
+        if (cameraDevice == null)
             Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE,CaptureRequest.CONTROL_MODE_AUTO);
-        try{
-            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(),null,mBackgroundHandler);
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+        try {
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -291,23 +293,21 @@ public class Camera extends AppCompatActivity {
 
 
     private void openCamera() {
-        CameraManager manager = (CameraManager)getSystemService(Context.CAMERA_SERVICE);
-        try{
+        CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
             cameraId = manager.getCameraIdList()[0];
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             assert map != null;
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-            //Check realtime permission if run higher API 23
-            if(ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
-            {
-                ActivityCompat.requestPermissions(this,new String[]{
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{
                         Manifest.permission.CAMERA,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
-                },REQUEST_CAMERA_PERMISSION);
+                }, REQUEST_CAMERA_PERMISSION);
                 return;
             }
-            manager.openCamera(cameraId,stateCallback,null);
+            manager.openCamera(cameraId, stateCallback, null);
 
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -350,7 +350,7 @@ public class Camera extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         startBackgroundThread();
-        if(textureView.isAvailable())
+        if (textureView.isAvailable())
             openCamera();
         else
             textureView.setSurfaceTextureListener(textureListener);
@@ -364,9 +364,9 @@ public class Camera extends AppCompatActivity {
 
     private void stopBackgroundThread() {
         mBackgroundThread.quitSafely();
-        try{
+        try {
             mBackgroundThread.join();
-            mBackgroundThread= null;
+            mBackgroundThread = null;
             mBackgroundHandler = null;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -380,41 +380,46 @@ public class Camera extends AppCompatActivity {
     }
 
 
-
-
-
-    private void postPhotoUser(String latitud, String longitud, String uid){
-        String rute_storage_photo = storage_path + uid;
-        StorageReference reference = storageReference.child(rute_storage_photo);
-        Uri thumbnailFile = Uri.fromFile(file);
-        reference.putFile(thumbnailFile).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+    private void postPhotoUser(String path) {
+        Uri file = Uri.fromFile(this.file);
+        File fileas;
+        try {
+            Bitmap t = ThumbnailUtils.createImageThumbnail(this.file,new Size(100,100),null);
+            fileas = new File(this.file.getParent() + "thumbail.jpg");
+            FileOutputStream fos = new FileOutputStream(fileas);
+            t.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Uri thumbnail = Uri.fromFile(fileas);
+        StorageReference reference = storageReference.child(path);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(Camera.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},100);
+        }
+        fus.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
-                uriTask.addOnSuccessListener(new OnSuccessListener<Uri>() {
-                    @Override
-                    public void onSuccess(Uri uri) {
-                        firebaseFirestore = FirebaseFirestore.getInstance();
-                        Map<String, Object> map = new HashMap<>();
-                        String download_uri = uri.toString();
-                        map.put("latitud",latitud);
-                        map.put("longitud",longitud);
-                        map.put("uid",uid);
-                        map.put("uri",download_uri);
-                        firebaseFirestore.collection("userPhoto").add(map).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                            @Override
-                            public void onSuccess(DocumentReference documentReference) {
-                                Toast.makeText(getApplicationContext(),"Subida exitosa", Toast.LENGTH_SHORT).show();
-                            }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(getApplicationContext(),"Mal", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                });
+            public void onSuccess(Location location) {
+                if (location!= null){
+                    String latitud = String.valueOf(location.getLatitude());
+                    String longitud = String.valueOf(location.getLongitude());
+                    UploadTask upload = reference.putFile(file);
+                    StorageMetadata metadata = new StorageMetadata.Builder()
+                            .setContentType("image/jpg")
+                            .setCustomMetadata("latitud", latitud)
+                            .setCustomMetadata("longitud", longitud)
+                            .build();
+                    reference.updateMetadata(metadata);
+                    upload.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            Toast.makeText(Camera.this, "OLEEEEEE", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
             }
         });
+
     }
 }
