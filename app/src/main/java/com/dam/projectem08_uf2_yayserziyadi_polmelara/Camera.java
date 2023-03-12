@@ -20,6 +20,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -46,6 +47,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -132,6 +134,28 @@ public class Camera extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 takePicture();
+                StorageReference storageReference1 = storageReference.child("/photoUsers/" + "/" + user.getEmail() + "/");
+                storageReference1.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
+                    @Override
+                    public void onSuccess(ListResult listResult) {
+                       listResult.getItems();
+                        for (StorageReference s: listResult.getItems())
+                        {
+                            s.getBytes(1024).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                                @Override
+                                public void onSuccess(byte[] bytes) {
+
+                                }
+                            });
+                        }
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+
+                    }
+                });
+
             }
         });
     }
@@ -392,6 +416,59 @@ public class Camera extends AppCompatActivity {
                                 .build();
 
                         UploadTask upload = imagesRef.putFile(file);
+
+
+                        upload.addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                                imagesRef.updateMetadata(metadata);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                            }
+                        });
+
+                    }
+                }
+            });
+        }
+        StorageReference thumbnail = storageReference.child("/thumbails/" + "/" + user.getEmail() + "/" + file.getLastPathSegment());
+        Bitmap bitmap;
+        try {
+            bitmap = ThumbnailUtils.createImageThumbnail(image, new Size(100,100),null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        File f;
+        try {
+            f = File.createTempFile(String.valueOf(System.currentTimeMillis()),"jpg");
+            FileOutputStream fos = new FileOutputStream(f);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(Camera.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},100);
+        }else {
+            fus.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+
+                        StorageMetadata metadata = new StorageMetadata.Builder()
+                                .setContentType("image/jpg")
+                                .setCustomMetadata("latitud", String.valueOf(location.getLatitude()))
+                                .setCustomMetadata("longitud", String.valueOf(location.getLongitude()))
+                                .build();
+
+                        UploadTask upload = thumbnail.putFile(Uri.fromFile(f));
+
+
                         upload.addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
