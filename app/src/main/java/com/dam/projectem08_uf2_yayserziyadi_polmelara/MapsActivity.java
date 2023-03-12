@@ -9,11 +9,15 @@ import android.Manifest;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -32,12 +36,9 @@ import com.dam.projectem08_uf2_yayserziyadi_polmelara.databinding.ActivityMapsBi
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
-import org.apache.sanselan.ImageReadException;
-import org.apache.sanselan.common.ImageMetadata;
-import org.apache.sanselan.formats.jpeg.JpegImageMetadata;
-import org.apache.sanselan.formats.tiff.TiffImageMetadata;
-import org.apache.sanselan.formats.tiff.constants.GPSTagConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,7 +94,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     latitude = addresses.get(0).getLatitude();
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
-                                    mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
+                                    MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude, longitude)).title("Hello Maps");
+
+                                    marker.icon(getImages("6d54d467-d1b0-4a8f-be92-21989674546f.jpg"));
+                                    mMap.addMarker(marker);
                                     float zoomLevel = 11.0f;
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
 
@@ -139,4 +143,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
     }
 
+    public BitmapDescriptor getImages(String path){
+        final Bitmap[] bitmap = new Bitmap[1];
+        final BitmapDescriptor[] bitmapDescriptor = new BitmapDescriptor[1];
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference imageRef = storage.getReference()
+                .child("photoUsers")
+                .child(path);
+        //6d54d467-d1b0-4a8f-be92-21989674546f.jpg
+        imageRef.getBytes(1024*1024)
+                .addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                    @Override
+                    public void onSuccess(byte[] bytes) {
+                         bitmap[0] = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                         bitmapDescriptor[0] = BitmapDescriptorFactory.fromBitmap(bitmap[0]);
+                    }
+                });
+        return bitmapDescriptor[0];
+    }
 }
