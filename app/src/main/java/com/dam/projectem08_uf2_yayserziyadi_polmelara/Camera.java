@@ -19,7 +19,6 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.location.Location;
 import android.media.Image;
 import android.media.ImageReader;
-import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -38,14 +37,13 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
@@ -59,16 +57,13 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class Camera extends AppCompatActivity {
 
     private FloatingActionButton btnCapture;
     private TextureView textureView;
-    FirebaseFirestore firebaseFirestore;
     FirebaseAuth mAuth;
     FirebaseUser user;
 
@@ -179,7 +174,7 @@ public class Camera extends AppCompatActivity {
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
-            file = new File(getExternalFilesDir("Storage"), "/" + UUID.randomUUID().toString() + ".jpg");
+            file = new File(getExternalFilesDir("coñoGordo"), "/" + UUID.randomUUID().toString() + ".jpg");
 
 
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
@@ -214,8 +209,8 @@ public class Camera extends AppCompatActivity {
                     try {
                         outputStream = new FileOutputStream(file);
                         outputStream.write(bytes);
-                        showImage(file);
-                        postPhotoUser(file.getName());
+                        //showImage(file);
+                        saveInFirebase(file);
                     } finally {
                         if (outputStream != null)
                             outputStream.close();
@@ -380,46 +375,41 @@ public class Camera extends AppCompatActivity {
     }
 
 
-    private void postPhotoUser(String path) {
-        Uri file = Uri.fromFile(this.file);
-        File fileas;
-        try {
-            Bitmap t = ThumbnailUtils.createImageThumbnail(this.file,new Size(100,100),null);
-            fileas = new File(this.file.getParent() + "thumbail.jpg");
-            FileOutputStream fos = new FileOutputStream(fileas);
-            t.compress(Bitmap.CompressFormat.JPEG, 90, fos);
-            fos.flush();
-            fos.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Uri thumbnail = Uri.fromFile(fileas);
-        StorageReference reference = storageReference.child(path);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED){
+    public void saveInFirebase(File image) {
+        Uri file = Uri.fromFile(image);
+
+        StorageReference imagesRef = storageReference.child("/photoUsers/" + "/" + user.getUid() + "/" + file.getLastPathSegment());
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(Camera.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},100);
-        }
-        fus.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location location) {
-                if (location!= null){
-                    String latitud = String.valueOf(location.getLatitude());
-                    String longitud = String.valueOf(location.getLongitude());
-                    UploadTask upload = reference.putFile(file);
-                    StorageMetadata metadata = new StorageMetadata.Builder()
-                            .setContentType("image/jpg")
-                            .setCustomMetadata("latitud", latitud)
-                            .setCustomMetadata("longitud", longitud)
-                            .build();
-                    reference.updateMetadata(metadata);
-                    upload.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                        @Override
-                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                            Toast.makeText(Camera.this, "OLEEEEEE", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        }else {
+            fus.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+
+                        StorageMetadata metadata = new StorageMetadata.Builder()
+                                .setContentType("image/jpg")
+                                .setCustomMetadata("latitud", String.valueOf(location.getLatitude()))
+                                .setCustomMetadata("longitud", String.valueOf(location.getLongitude()))
+                                .build();
+
+                        UploadTask upload = imagesRef.putFile(file);
+                        upload.addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                                imagesRef.updateMetadata(metadata);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                            }
+                        });
+
+                    }
                 }
-            }
-        });
+            });
+        }
 
     }
+
 }
