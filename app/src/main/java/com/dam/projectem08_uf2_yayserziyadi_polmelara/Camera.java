@@ -70,8 +70,6 @@ public class Camera extends AppCompatActivity {
 
     StorageReference storageReference;
 
-    String storage_path = "images/";
-
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
 
     static {
@@ -119,14 +117,9 @@ public class Camera extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         if(mAuth.getCurrentUser() != null){
             storageReference = FirebaseStorage.getInstance().getReference();
-            String latitudeS = String.valueOf(getIntent().getExtras().getDouble("latitude"));
-            String longitutedS = String.valueOf(getIntent().getExtras().getDouble("longitude"));
             user = mAuth.getCurrentUser();
             fus = LocationServices.getFusedLocationProviderClient(this);
 
-            Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
-            Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
-            Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
         }else{
             Toast.makeText(this, "Necessitas logearte", Toast.LENGTH_LONG).show();
             startActivity(new Intent(Camera.this, MainActivity.class));
@@ -229,7 +222,6 @@ public class Camera extends AppCompatActivity {
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Toast.makeText(Camera.this, "Guardado en  " + file, Toast.LENGTH_SHORT).show();
                     createCameraPreview();
                     showImage(file.getAbsoluteFile());
                 }
@@ -384,7 +376,7 @@ public class Camera extends AppCompatActivity {
     public void saveInFirebase(File image) {
         Uri file = Uri.fromFile(image);
 
-        StorageReference imagesRef = storageReference.child("/photoUsers/" + "/" + user.getUid() + "/" + file.getLastPathSegment());
+        StorageReference imagesRef = storageReference.child("/photoUsers/" + "/" + user.getEmail() + "/" + file.getLastPathSegment());
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(Camera.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},100);
         }else {

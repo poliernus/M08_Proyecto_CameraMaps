@@ -33,9 +33,19 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import org.apache.sanselan.ImageReadException;
+import org.apache.sanselan.common.ImageMetadata;
+import org.apache.sanselan.formats.jpeg.JpegImageMetadata;
+import org.apache.sanselan.formats.tiff.TiffImageMetadata;
+import org.apache.sanselan.formats.tiff.constants.GPSTagConstants;
+
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import io.grpc.Metadata;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -46,6 +56,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public double latitude;
     public double longitude;
     private FloatingActionButton btnCapture;
+
+    private ArrayList<photo> listPhotoMarkers;
 
 
     @Override
