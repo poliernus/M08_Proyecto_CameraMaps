@@ -160,13 +160,6 @@ public class Camera extends AppCompatActivity {
         });
     }
 
-    public void showImage(File file) {
-        System.out.println("TEST: ------------------------" + file.getAbsolutePath());
-        if (file.exists()) {
-            Bitmap imgBitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-
-        }
-    }
 
     private void takePicture() {
         if (cameraDevice == null)
@@ -247,7 +240,6 @@ public class Camera extends AppCompatActivity {
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
                     createCameraPreview();
-                    showImage(file.getAbsoluteFile());
                 }
             };
 
@@ -472,7 +464,7 @@ public class Camera extends AppCompatActivity {
                         upload.addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
                             @Override
                             public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                                imagesRef.updateMetadata(metadata);
+                                thumbnail.updateMetadata(metadata);
                             }
                         }).addOnFailureListener(new OnFailureListener() {
                             @Override

@@ -62,8 +62,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public double longitude;
     private FloatingActionButton btnCapture;
 
-    private ArrayList<photo> listPhotoMarkers;
-
     StorageReference storageReference;
     FirebaseUser user;
     FirebaseAuth mAuth;
@@ -172,16 +170,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void qesto(){
-        StorageReference storageReference1 = storageReference.child("/photoUsers/" + "/" + user.getEmail() + "/");
+        StorageReference storageReference1 = storageReference.child("/thumbails/" + "/" + user.getEmail() + "/");
        storageReference1.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
             @Override
             public void onSuccess(ListResult thumbailList) {
                 for (StorageReference thumbail : thumbailList.getItems()){
-                    System.out.println(thumbail.getName());
                     thumbail.getMetadata().addOnSuccessListener(new OnSuccessListener<StorageMetadata>() {
                         @Override
                         public void onSuccess(StorageMetadata storageMetadata) {
-                            thumbail.getBytes(1024 * 1024*5).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                            thumbail.getBytes(1024 * 1024).addOnSuccessListener(new OnSuccessListener<byte[]>() {
                                 @Override
                                 public void onSuccess(byte[] bytes) {
                                     Bitmap image = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
