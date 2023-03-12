@@ -7,10 +7,12 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
 
+import com.google.android.gms.common.internal.Constants;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import android.content.Intent;
@@ -36,7 +38,10 @@ import com.dam.projectem08_uf2_yayserziyadi_polmelara.databinding.ActivityMapsBi
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.ListResult;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 
 
@@ -45,8 +50,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import io.grpc.Metadata;
+import java.util.Objects;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -60,6 +64,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private ArrayList<photo> listPhotoMarkers;
 
+    StorageReference storageReference;
+    FirebaseUser user;
+    FirebaseAuth mAuth;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +80,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        mAuth = FirebaseAuth.getInstance();
+            storageReference = FirebaseStorage.getInstance().getReference();
+            user = mAuth.getCurrentUser();
         btnCapture = (FloatingActionButton) findViewById(R.id.btnCapture);
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -94,13 +106,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     latitude = addresses.get(0).getLatitude();
                                     longitude = addresses.get(0).getLongitude();
                                     LatLng current = new LatLng(latitude, longitude);
-                                    MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude, longitude)).title("Hello Maps");
 
-                                    marker.icon(getImages("6d54d467-d1b0-4a8f-be92-21989674546f.jpg"));
-                                    mMap.addMarker(marker);
                                     float zoomLevel = 11.0f;
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
-
+                                    qesto();
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
@@ -160,5 +169,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 });
         return bitmapDescriptor[0];
+    }
+
+    public void qesto(){
+        StorageReference storageReference1 = storageReference.child("/photoUsers/" + "/" + user.getEmail() + "/");
+       storageReference1.listAll().addOnSuccessListener(new OnSuccessListener<ListResult>() {
+            @Override
+            public void onSuccess(ListResult thumbailList) {
+                for (StorageReference thumbail : thumbailList.getItems()){
+                    System.out.println(thumbail.getName());
+                    thumbail.getMetadata().addOnSuccessListener(new OnSuccessListener<StorageMetadata>() {
+                        @Override
+                        public void onSuccess(StorageMetadata storageMetadata) {
+                            thumbail.getBytes(1024 * 1024*5).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                                @Override
+                                public void onSuccess(byte[] bytes) {
+                                    Bitmap image = BitmapFactory.decodeByteArray(bytes,0,bytes.length);
+                                    double latitude1 = Double.parseDouble(Objects.requireNonNull(storageMetadata.getCustomMetadata("latitud")));
+                                    double longitud1 = Double.parseDouble(Objects.requireNonNull(storageMetadata.getCustomMetadata("longitud")));
+
+                                    MarkerOptions marker = new MarkerOptions().position(new LatLng(latitude1, longitud1)).title("Picture").icon(BitmapDescriptorFactory.fromBitmap(image));
+                                    mMap.addMarker(marker);
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    System.out.println(e);
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+        });
     }
 }

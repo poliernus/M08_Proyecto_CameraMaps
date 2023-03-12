@@ -10,8 +10,8 @@
         android:id="@+id/imageView"
         android:layout_width="251dp"
         android:layout_height="247dp"
-        android:layout_marginStart="80dp"
         android:layout_marginTop="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/userpokeapi" />
@@ -29,7 +29,7 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.893" />
+        app:layout_constraintVertical_bias="0.784" />
 
     <TextView
         android:id="@+id/textView"
@@ -95,10 +95,10 @@
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="52dp"
         android:text="Create account?"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.386"
+        app:layout_constraintHorizontal_bias="0.387"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonLogin" />
 
@@ -106,7 +106,7 @@
         android:id="@+id/textViewCreateAccount"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="createAccount"
+        android:text="Create an Account"
         android:textColor="#eb2127"
         app:layout_constraintStart_toEndOf="@+id/textView3"
         app:layout_constraintTop_toTopOf="@+id/textView3" />
