@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 mPrevAngle = mCurrAngle;
                 mCurrAngle = Math.toDegrees(Math.atan2(x - xc, yc - y));
                 animate(mPrevAngle, mCurrAngle, 0);
-                System.out.println(mCurrAngle);
                 break;
             }
             case MotionEvent.ACTION_UP : {

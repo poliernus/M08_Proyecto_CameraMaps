@@ -84,6 +84,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     mMap.addMarker(new MarkerOptions().position(current).title("Current Location"));
                                     float zoomLevel = 11.0f;
                                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(current, zoomLevel));
+
+
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }

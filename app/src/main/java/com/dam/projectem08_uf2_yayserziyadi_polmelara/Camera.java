@@ -2,6 +2,7 @@ package com.dam.projectem08_uf2_yayserziyadi_polmelara;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -120,16 +121,21 @@ public class Camera extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        storageReference = FirebaseStorage.getInstance().getReference();
-        String latitudeS = String.valueOf(getIntent().getExtras().getDouble("latitude"));
-        String longitutedS = String.valueOf(getIntent().getExtras().getDouble("longitude"));
         mAuth = FirebaseAuth.getInstance();
-        user = mAuth.getCurrentUser();
-        fus = LocationServices.getFusedLocationProviderClient(this);
+        if(mAuth.getCurrentUser() != null){
+            storageReference = FirebaseStorage.getInstance().getReference();
+            String latitudeS = String.valueOf(getIntent().getExtras().getDouble("latitude"));
+            String longitutedS = String.valueOf(getIntent().getExtras().getDouble("longitude"));
+            user = mAuth.getCurrentUser();
+            fus = LocationServices.getFusedLocationProviderClient(this);
 
-        Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
-        Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
-        Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
+            Toast.makeText(Camera.this, user.getUid(), Toast.LENGTH_LONG).show();
+            Toast.makeText(Camera.this, latitudeS, Toast.LENGTH_LONG).show();
+            Toast.makeText(Camera.this, longitutedS, Toast.LENGTH_LONG).show();
+        }else{
+            Toast.makeText(this, "Necessitas logearte", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(Camera.this, MainActivity.class));
+        }
         textureView = (TextureView) findViewById(R.id.textureView);
         assert textureView != null;
         textureView.setSurfaceTextureListener(textureListener);
